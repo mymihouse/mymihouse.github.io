@@ -1080,6 +1080,7 @@ function setView(v) {
   if (ui.view === v) return;
   if (v !== 'plan' && ui.tool !== 'select') setTool('select');
   ui.view = v;
+  document.body.dataset.view = v;
   $$('#viewTabs button').forEach((b) => b.classList.toggle('active', b.dataset.view === v));
   const is3d = v === '3d';
   $('#view3d').style.display = is3d ? 'block' : 'none';
@@ -1199,6 +1200,10 @@ function showPageParam() {
 }
 if (!params.get('load')) showPageParam();
 const assistant = initAssistant({ stage, toggleBtn: $('#btnAssist'), undo: () => { if (undo()) afterUndo(); }, setLevel, dropCheckpoint });
+// Mode sombre / clair (mémorisé dans ce navigateur)
+function applyTheme(t) { document.documentElement.dataset.theme = t; $('#btnTheme').textContent = t === 'dark' ? '☀️' : '🌙'; $('#btnTheme').title = t === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'; }
+applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+$('#btnTheme').onclick = () => { const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; applyTheme(t); try { localStorage.setItem('mymi.theme', t); } catch (e) { /* stockage indisponible */ } };
 updateLevelBar();
 window.addEventListener('error', (e) => toast('Erreur : ' + e.message, 6000));
 $('#projName').value = store.doc.project.name;

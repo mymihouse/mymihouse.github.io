@@ -135,3 +135,46 @@ footer #hint { flex: 1; color: var(--text); }
 .as-status.ok { color: #188038; }
 .as-status.err { color: var(--danger); }
 .as-note { font-size: 12px; color: var(--muted); }
+
+/* ---------- Mode sombre ---------- */
+html[data-theme="dark"] {
+  --bg: #15181e; --panel: #1d2129; --border: #313744; --text: #e4e7ec; --muted: #9aa3b2;
+  --accent: #5b9cf5; --accent-soft: #233552; --danger: #f28b82;
+  --field: #252a34; --hover: #282e3a;
+  color-scheme: dark;
+}
+html[data-theme="dark"] #projName,
+html[data-theme="dark"] .row input[type=text], html[data-theme="dark"] .row input[type=number], html[data-theme="dark"] .row select,
+html[data-theme="dark"] .as-keyrow input, html[data-theme="dark"] .as-keyrow select { background: var(--field); color: var(--text); }
+html[data-theme="dark"] .tabs { background: #252a34; }
+html[data-theme="dark"] .tabs button.active { background: #343b48; color: var(--text); }
+html[data-theme="dark"] .btn, html[data-theme="dark"] .lib button, html[data-theme="dark"] .modal .choice,
+html[data-theme="dark"] #levelBar, html[data-theme="dark"] .as-form, html[data-theme="dark"] .as-msg.ai,
+html[data-theme="dark"] .modal .box, html[data-theme="dark"] #lenInput { background: var(--panel); color: var(--text); }
+html[data-theme="dark"] .btn:hover, html[data-theme="dark"] .tool:hover, html[data-theme="dark"] #levelBar .lv:hover, html[data-theme="dark"] .as-undo { background: var(--hover); }
+html[data-theme="dark"] .btn.primary { background: #1a73e8; border-color: #1a73e8; color: #fff; }
+html[data-theme="dark"] .tool.active, html[data-theme="dark"] #btnAssist.on { background: var(--accent-soft); border-color: #3a5a8c; color: #bcd5fb; }
+html[data-theme="dark"] #levelBar .lv.active { background: #1a73e8; color: #fff; }
+html[data-theme="dark"] .row label, html[data-theme="dark"] .modal p, html[data-theme="dark"] .modal li { color: #c9ced8; }
+html[data-theme="dark"] .modal kbd { background: #2a303b; border-color: #3d4452; color: var(--text); }
+html[data-theme="dark"] .modal a { color: #8ab4f8; }
+html[data-theme="dark"] #calibBar { background: #3a2c12; color: #fbe3b5; }
+html[data-theme="dark"] #stage { background: #1a1d23; }
+/* Le plan est dessiné en clair : on l'inverse à l'écran (le PDF reste en clair). Façades, coupe et masse gardent leurs vraies couleurs. */
+html[data-theme="dark"] body:not([data-view]) #plan, html[data-theme="dark"] body[data-view="plan"] #plan { filter: invert(0.9) hue-rotate(180deg); }
+html[data-theme="dark"] .lib canvas { filter: invert(0.9) hue-rotate(180deg); }
+html[data-theme="dark"] .sw { box-shadow: 0 0 0 1px #555; }
+#btnTheme { font-size: 14px; padding: 5px 8px; }
+.tabs button { white-space: nowrap; }
+@media (max-width: 1560px) {
+  header { gap: 5px; padding: 0 8px; }
+  header .logo { font-size: 13.5px; margin-right: 2px; }
+  #projName { width: 140px; }
+  .tabs button { padding: 5px 8px; }
+  header .btn { padding: 5px 8px; }
+}
+@media (max-width: 1320px) {
+  header .logo span, header .logo { font-size: 12px; }
+  #projName { width: 110px; }
+  #btnExample { display: none; }
+}

@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="darkreader-lock">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
+<script>try{var t=localStorage.getItem('mymi.theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme='light'}</script>
 <title>MymiHouseBoucletteBuilder</title>
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
@@ -31,6 +32,7 @@
     <button class="btn" id="btnOpen">Ouvrir</button>
     <button class="btn" id="btnSave">Enregistrer</button>
     <button class="btn primary" id="btnPDF">Exporter PDF</button>
+    <button class="btn" id="btnTheme" title="Mode sombre / mode clair">🌙</button>
     <button class="btn" id="btnHelp" title="Aide">?</button>
     <input type="file" id="fileInput" accept=".json,.archiplan" hidden>
     <input type="file" id="levelInput" accept=".json,.archiplan" hidden>
