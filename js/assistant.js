@@ -88,6 +88,7 @@ de X (vers la pièce voisine). Les identifiants (w…, o…, r…, f…) viennen
 Un mur qui longe plusieurs pièces (« Salle de bains + WC ») les modifie toutes quand on le déplace : signale-le dans le message.
 Si la demande est ambiguë ou impossible, renvoie "actions": [] et pose une question claire dans "message".
 Si l'utilisateur dit « ce mur », « cette fenêtre »… utilise "selection".
+« Inverser le sens d'ouverture » d'une porte sans autre précision = flipSide seul (elle s'ouvre de l'autre côté du mur) ; « changer le côté des charnières / des gonds » = flipHinge.
 Les distances données en mètres (« 0,30 m », « 1m20 ») sont à convertir en cm.
 
 ACTIONS POSSIBLES (champ "op") :
@@ -310,24 +311,30 @@ let history = [];
 export const getKey = () => ls.get(LS_KEY);
 export function setKey(k) { ls.set(LS_KEY, (k || '').trim()); ls.set(LS_GOOD, ''); modelCache = { key: null, list: null }; }
 
+const TIMEOUT_MS = 40000;
 async function gfetch(path, key, body) {
-  const r = await fetch(API + path, { method: body ? 'POST' : 'GET', headers: { 'x-goog-api-key': key, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), body ? TIMEOUT_MS : 15000);
+  let r;
+  try { r = await fetch(API + path, { method: body ? 'POST' : 'GET', signal: ac.signal, headers: { 'x-goog-api-key': key, ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined }); }
+  catch (e) { clearTimeout(timer); const err = new Error(e.name === 'AbortError' ? 'trop long' : 'réseau indisponible'); err.status = e.name === 'AbortError' ? 408 : 0; throw err; }
+  clearTimeout(timer);
   let j = null; try { j = await r.json(); } catch (e) { /* pas de JSON */ }
   if (!r.ok) { const err = new Error(j?.error?.message || `HTTP ${r.status}`); err.status = r.status; err.reason = j?.error?.status; throw err; }
   return j;
 }
 
-// Modèles disponibles pour cette clé : Flash (meilleur) d'abord, Flash-Lite (quota gratuit plus large) en secours
+// Modèles disponibles pour cette clé : Flash-Lite d'abord (répond en ~1 s ; les Flash complets sont très lents sur l'offre gratuite), puis Flash
 let modelCache = { key: null, list: null };
 export async function listModels(key = getKey()) {
   if (modelCache.key === key && modelCache.list) return modelCache.list;
   const j = await gfetch('/models?pageSize=200', key);
   const ver = (n) => { const m = n.match(/gemini-(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : 0; };
-  const rank = (n) => (/flash-lite/.test(n) ? 1 : /flash/.test(n) ? 0 : 2) + (/preview|exp/.test(n) ? 0.5 : 0);
+  const rank = (n) => (/flash-lite/.test(n) ? 0 : /flash/.test(n) ? 1 : 2) + (/preview|exp/.test(n) ? 0.5 : 0);
   const res = (j.models || [])
     .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
     .map((m) => m.name.replace(/^models\//, ''))
-    .filter((n) => /^gemini-/.test(n) && !/(tts|image|vision|embed|live|audio|thinking|computer|robotics|nano|learnlm|-8b)/.test(n) && !/pro/.test(n))
+    .filter((n) => /^gemini-/.test(n) && !/(tts|image|vision|embed|live|audio|thinking|computer|robotics|nano|learnlm|omni|-8b)/.test(n) && !/pro/.test(n))
     .sort((a, b) => rank(a) - rank(b) || ver(b) - ver(a) || a.length - b.length);
   modelCache = { key, list: res };
   return res;
@@ -345,7 +352,7 @@ export async function ask(text) {
   const body = { systemInstruction: { parts: [{ text: SYSTEM() }] }, contents, generationConfig: { responseMimeType: 'application/json', temperature: 0.1 } };
   const chosen = ls.get(LS_MODEL);
   let candidates = chosen ? [chosen] : [];
-  if (!chosen) { const good = ls.get(LS_GOOD); try { candidates = await listModels(key); } catch (e) { if (e.status === 400 || e.status === 403) throw keyError(e); throw e; } if (good && candidates.includes(good)) candidates = [good, ...candidates.filter((m) => m !== good)]; candidates = candidates.slice(0, 4); }
+  if (!chosen) { const good = ls.get(LS_GOOD); try { candidates = await listModels(key); } catch (e) { if (e.status === 400 || e.status === 403) throw keyError(e); throw e; } candidates = candidates.slice(0, 3); }
   if (!candidates.length) throw new Error('Aucun modèle Gemini disponible pour cette clé.');
   let last;
   for (const model of candidates) {
@@ -363,9 +370,10 @@ export async function ask(text) {
       if (e.status === 400 && /api key|API_KEY/i.test(e.message)) throw keyError(e);
       if (e.status === 403) throw keyError(e);
       if (chosen) break;
-      if (![404, 429, 500, 503].includes(e.status) && e.message !== 'réponse illisible' && e.message !== 'réponse vide') break;
+      if (![404, 408, 429, 500, 503].includes(e.status) && e.message !== 'réponse illisible' && e.message !== 'réponse vide') break;
     }
   }
+  if (last?.status === 408) throw new Error('Google met trop de temps à répondre. Réessayez dans un instant, ou choisissez un autre modèle dans ⚙.');
   if (last?.status === 429) { const e = new Error('Quota gratuit atteint pour le moment. Réessayez dans une minute (ou demain si la limite du jour est atteinte).'); throw e; }
   throw last;
 }
@@ -405,7 +413,7 @@ export function initAssistant(h) {
     <div class="as-keyrow"><input type="password" id="asKey" placeholder="👉 Collez votre clé ici (⌘V), elle commence souvent par AIza…"><button class="btn primary" id="asKeySave">Enregistrer</button><button class="btn" id="asKeyDel">Oublier</button></div>
     <div class="as-keyrow"><label>Modèle :</label><select id="asModel"><option value="">Automatique (recommandé)</option></select><button class="btn" id="asTest">Tester la clé</button></div>
     <p class="as-status" id="asStatus"></p>
-    <p class="as-note">La clé reste dans <b>ce navigateur</b>, sur cet ordinateur ; elle n'est envoyée qu'à Google. À chaque demande, l'assistant envoie à Google la description du plan (pièces, murs, dimensions), sans le nom du projet ni l'adresse. Sur l'offre gratuite, Google limite le nombre de demandes par jour (quand la limite du meilleur modèle est atteinte, l'assistant passe tout seul à un modèle plus léger) et peut utiliser ces données pour améliorer ses modèles.</p>
+    <p class="as-note">La clé reste dans <b>ce navigateur</b>, sur cet ordinateur ; elle n'est envoyée qu'à Google. À chaque demande, l'assistant envoie à Google la description du plan (pièces, murs, dimensions), sans le nom du projet ni l'adresse. Sur l'offre gratuite, Google limite le nombre de demandes par jour (si un modèle est saturé ou trop lent, l'assistant passe tout seul à un autre) et peut utiliser ces données pour améliorer ses modèles.</p>
   </div>`;
   document.body.appendChild(modal);
 
@@ -440,6 +448,8 @@ export function initAssistant(h) {
     busy = true; $('#asSend').disabled = true; input.value = '';
     addMsg('me', esc(text));
     const wait = addMsg('ai pending', 'Je regarde le plan…');
+    const t0 = Date.now();
+    const tick = setInterval(() => { if (wait.classList.contains('pending')) wait.textContent = `Je regarde le plan… ${Math.round((Date.now() - t0) / 1000)} s`; }, 1000);
     try {
       const r = await ask(text);
       const res = applyActions(r.actions);
@@ -453,6 +463,7 @@ export function initAssistant(h) {
       wait.className = 'as-msg ai err'; wait.textContent = err.message || String(err);
       if (err.noKey) openSettings();
     }
+    clearInterval(tick);
     busy = false; $('#asSend').disabled = false; input.focus();
   });
   input.addEventListener('keydown', (e) => { if (e.key === 'Escape') { input.blur(); } });
