@@ -402,7 +402,7 @@ export function initAssistant(h) {
       <li>Cliquez sur <b>« Create API key »</b> (Créer une clé), puis copiez-la.</li>
       <li>Collez-la ci-dessous et cliquez sur <b>Enregistrer</b>.</li>
     </ol>
-    <div class="as-keyrow"><input type="password" id="asKey" placeholder="Collez votre clé ici (commence souvent par AIza…)"><button class="btn primary" id="asKeySave">Enregistrer</button><button class="btn" id="asKeyDel">Oublier</button></div>
+    <div class="as-keyrow"><input type="password" id="asKey" placeholder="👉 Collez votre clé ici (⌘V), elle commence souvent par AIza…"><button class="btn primary" id="asKeySave">Enregistrer</button><button class="btn" id="asKeyDel">Oublier</button></div>
     <div class="as-keyrow"><label>Modèle :</label><select id="asModel"><option value="">Automatique (recommandé)</option></select><button class="btn" id="asTest">Tester la clé</button></div>
     <p class="as-status" id="asStatus"></p>
     <p class="as-note">La clé reste dans <b>ce navigateur</b>, sur cet ordinateur ; elle n'est envoyée qu'à Google. À chaque demande, l'assistant envoie à Google la description du plan (pièces, murs, dimensions), sans le nom du projet ni l'adresse. Sur l'offre gratuite, Google limite le nombre de demandes par jour (quand la limite du meilleur modèle est atteinte, l'assistant passe tout seul à un modèle plus léger) et peut utiliser ces données pour améliorer ses modèles.</p>
@@ -422,7 +422,7 @@ export function initAssistant(h) {
   };
   const openSettings = () => { $('#asKey').value = getKey(); status.textContent = getKey() ? '' : 'Aucune clé enregistrée.'; status.className = 'as-status'; modal.classList.add('show'); fillModels(); };
 
-  h.toggleBtn?.addEventListener('click', () => open(!box.classList.contains('show')));
+  h.toggleBtn?.addEventListener('click', () => { const v = !box.classList.contains('show'); open(v); if (v && !getKey()) openSettings(); });
   $('#asClose').onclick = () => open(false);
   $('#asGear').onclick = openSettings;
   $('#asSetClose').onclick = () => modal.classList.remove('show');
