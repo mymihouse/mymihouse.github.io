@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="darkreader-lock">
+<meta name="color-scheme" content="light">
+<title>MymiHouseBoucletteBuilder</title>
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/addons/"}}</script>
+<script src="vendor/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">MymiHouse<span>Bouclette</span>Builder</div>
+    <input id="projName" placeholder="Nom du projet">
+    <div class="tabs" id="viewTabs">
+      <button data-view="plan" class="active">Plan</button>
+      <button data-view="3d">3D</button>
+      <button data-view="facades">Façades</button>
+      <button data-view="coupe">Coupe</button>
+      <button data-view="masse">Plan de masse</button>
+    </div>
+    <div class="spacer"></div>
+    <button class="btn" id="btnUndo" title="Annuler (⌘Z)">↶</button>
+    <button class="btn" id="btnRedo" title="Rétablir (⇧⌘Z)">↷</button>
+    <button class="btn" id="btnNew">Nouveau</button>
+    <button class="btn" id="btnExample">Exemple</button>
+    <button class="btn" id="btnOpen">Ouvrir</button>
+    <button class="btn" id="btnSave">Enregistrer</button>
+    <button class="btn primary" id="btnPDF">Exporter PDF</button>
+    <button class="btn" id="btnHelp" title="Aide">?</button>
+    <input type="file" id="fileInput" accept=".json,.archiplan" hidden>
+    <input type="file" id="levelInput" accept=".json,.archiplan" hidden>
+  </header>
+
+  <nav id="tools">
+    <h4>Dessin</h4>
+    <button class="tool active" data-tool="select"><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 3l14 8-6 2-3 6z"/></svg></span>Sélection<kbd>V</kbd></button>
+    <button class="tool" data-tool="wallExt"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 9h18M3 15h18" /></svg></span>Mur extérieur<kbd>M</kbd></button>
+    <button class="tool" data-tool="wallInt"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h18"/></svg></span>Cloison<kbd>C</kbd></button>
+    <button class="tool" data-tool="rect"><span class="ic"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14"/></svg></span>Pièce rect.<kbd>R</kbd></button>
+    <h4>Ouvertures</h4>
+    <button class="tool" data-tool="opening" data-arg="porte"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V4h10v16M14 4a12 12 0 0 1 6 10"/></svg></span>Porte<kbd>P</kbd></button>
+    <button class="tool" data-tool="opening" data-arg="entree"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V4h12v16M12 11v2"/></svg></span>Porte d'entrée</button>
+    <button class="tool" data-tool="opening" data-arg="fenetre"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10"/><path d="M12 7v10"/></svg></span>Fenêtre<kbd>F</kbd></button>
+    <button class="tool" data-tool="opening" data-arg="petite"><span class="ic"><svg viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="8"/></svg></span>Petite fenêtre</button>
+    <button class="tool" data-tool="opening" data-arg="porteFenetre"><span class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18"/><path d="M12 3v18"/></svg></span>Porte-fenêtre</button>
+    <button class="tool" data-tool="opening" data-arg="baie"><span class="ic"><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16"/><path d="M12 4v16M4 12h6"/></svg></span>Baie coulissante</button>
+    <button class="tool" data-tool="opening" data-arg="garage"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14"/><path d="M3 9h18M3 13h18"/></svg></span>Porte garage</button>
+    <h4>Annotations</h4>
+    <button class="tool" data-tool="dim"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 8v8M21 8v8"/></svg></span>Cote<kbd>D</kbd></button>
+    <button class="tool" data-tool="section"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 12h18M6 12v5M18 12v5" stroke-dasharray="4 2"/></svg></span>Ligne de coupe</button>
+    <h4>Site</h4>
+    <button class="tool" data-tool="parcel"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 6l8-3 8 4-2 12-9 2-5-6z" stroke-dasharray="3 2"/></svg></span>Parcelle</button>
+    <button class="tool" data-tool="roof"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 13l9-8 9 8M6 11v9h12v-9"/></svg></span>Toiture</button>
+    <h4>Plan existant</h4>
+    <button class="tool" data-tool="importBg" title="Importer un PDF ou une image comme fond de plan"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v4h16v-4"/></svg></span>Importer PDF</button>
+    <button class="tool" data-tool="calib" title="Mettre le fond de plan à l'échelle"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 17L17 3M3 17l4 0M3 17l0-4M17 3l-4 0M17 3l0 4"/></svg></span>Mettre à l'échelle</button>
+    <input type="file" id="bgInput" accept=".pdf,image/*" hidden>
+    <h4>Meubles</h4>
+    <button class="tool" data-tool="library"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 18v-6h16v6M6 12V8h12v4M4 18v2M20 18v2"/></svg></span>Bibliothèque</button>
+  </nav>
+
+  <main id="stage">
+    <canvas id="plan"></canvas>
+    <div id="view3d"></div>
+    <div class="stage-msg" id="stageMsg"></div>
+    <div class="float-tb" id="planTb">
+      <button class="btn small" id="btnFit" title="Ajuster la vue (touche A)">Ajuster</button>
+      <button class="btn small" id="btnZoomIn">+</button>
+      <button class="btn small" id="btnZoomOut">−</button>
+    </div>
+    <div class="float-tb" id="tb3d" style="display:none">
+      <button class="btn small" id="btnWalk">🚶 Visite à pied</button>
+      <button class="btn small" id="btnRoof3d">Toiture on/off</button>
+      <button class="btn small" id="btnCut" title="Afficher tous les niveaux, ou seulement jusqu'au niveau affiché pour voir l'intérieur">Niveaux : tous</button>
+      <button class="btn small" id="btnSnap">Capture PNG</button>
+    </div>
+    <div class="float-tb" id="levelBar"></div>
+    <div class="float-tb right" id="tbSection" style="display:none">
+      <button class="btn small" id="btnFlipSection">Inverser le sens de vue</button>
+    </div>
+    <input id="lenInput" placeholder="longueur">
+    <div id="calibBar">
+      <span>Distance réelle entre les 2 points :</span>
+      <input id="calibInput" placeholder="ex. 4,50" inputmode="decimal">
+      <span>m</span>
+      <button class="btn primary small" id="calibOk">Valider</button>
+      <button class="btn small" id="calibCancel">Annuler</button>
+    </div>
+    <div id="walkHint">Déplacement : <b>Z Q S D</b> ou flèches — <b>Souris</b> pour regarder — <b>Maj</b> pour courir — <b>Échap</b> pour quitter</div>
+  </main>
+
+  <aside id="panel">
+    <div class="ptabs">
+      <button data-ptab="props" class="active">Propriétés</button>
+      <button data-ptab="lib">Bibliothèque</button>
+    </div>
+    <div class="pbody" id="pbody"></div>
+  </aside>
+
+  <footer>
+    <span id="hint"></span>
+    <span id="coords"></span>
+    <span id="zoom"></span>
+  </footer>
+</div>
+
+<div id="toast"></div>
+
+<div class="modal" id="welcome">
+  <div class="box">
+    <h2>Bienvenue dans MymiHouseBoucletteBuilder</h2>
+    <p>Dessinez vos plans de maison avec des cotes précises, visitez-les en 3D et exportez un dossier de plans (plan, coupe, façades, plan de masse) prêt pour un permis de construire.</p>
+    <div class="choices">
+      <button class="choice" id="wExample"><b>Ouvrir la maison d'exemple</b><span>Un T3 complet pour découvrir toutes les fonctions et le modifier.</span></button>
+      <button class="choice" id="wEmpty"><b>Commencer un plan vide</b><span>Tracez d'abord les murs extérieurs avec l'outil « Mur extérieur ».</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="help">
+  <div class="box">
+    <button class="btn close" id="helpClose">Fermer</button>
+    <h2>Aide rapide</h2>
+    <h3>Dessiner les murs</h3>
+    <ul>
+      <li>Outil <b>Mur extérieur</b> (<kbd>M</kbd>) : cliquez point par point, double-clic ou <kbd>Entrée</kbd> pour terminer. Les murs s'accrochent aux angles droits et aux murs existants.</li>
+      <li>Pendant le tracé, <b>tapez une longueur</b> (ex. <kbd>4,50</kbd> en mètres ou <kbd>450</kbd> en cm) puis <kbd>Entrée</kbd> pour un mur à la cote exacte.</li>
+      <li>Outil <b>Pièce rect.</b> (<kbd>R</kbd>) : tirez un rectangle pour créer 4 murs d'un coup.</li>
+      <li>Les pièces et leurs surfaces se créent automatiquement dès que les murs sont fermés. Cliquez sur une pièce pour la renommer.</li>
+    </ul>
+    <h3>Portes, fenêtres, meubles</h3>
+    <ul>
+      <li>Choisissez un type d'ouverture puis cliquez sur un mur. Glissez-la pour la déplacer ; ses dimensions et son sens d'ouverture sont dans le panneau de droite.</li>
+      <li><b>Bibliothèque</b> : cliquez sur un meuble puis sur le plan pour le poser. <kbd>R</kbd> le fait pivoter.</li>
+    </ul>
+    <h3>Étages (plusieurs niveaux)</h3>
+    <ul>
+      <li>La barre <b>Niveaux</b> en haut du plan permet de passer d'un niveau à l'autre. <b>＋ Étage</b> crée un étage avec les mêmes murs extérieurs.</li>
+      <li>Le niveau voisin s'affiche en bleu clair sous le plan pour aligner les murs. Nom, hauteur sous plafond, ajout d'un niveau en dessous et import d'un niveau depuis un autre fichier sont dans le panneau de droite.</li>
+      <li>Nommez une pièce <b>Trémie</b> (ou « Vide sur séjour ») pour percer le plancher à l'endroit de l'escalier.</li>
+      <li>La 3D, les façades, la coupe et le PDF montrent tous les niveaux. En 3D, « Niveaux » permet de n'afficher que jusqu'au niveau choisi pour voir l'intérieur.</li>
+    </ul>
+    <h3>Toiture, coupe, parcelle</h3>
+    <ul>
+      <li><b>Toiture</b> : ajoutée automatiquement sur l'emprise des murs (4 pans par défaut). Réglez la pente, le débord et le type dans le panneau.</li>
+      <li><b>Ligne de coupe</b> : tracez 2 points sur le plan ; la vue « Coupe » et le PDF l'utilisent.</li>
+      <li><b>Parcelle</b> : cliquez les coins du terrain (double-clic pour fermer) pour obtenir le plan de masse avec les distances aux limites.</li>
+    </ul>
+    <h3>Reprendre un plan existant (PDF ou photo)</h3>
+    <ul>
+      <li><b>Importer PDF</b> : le plan s'affiche en transparence sous votre dessin.</li>
+      <li><b>Mettre à l'échelle</b> : cliquez 2 points dont vous connaissez la distance réelle (par ex. les deux extrémités d'une cote « 4,50 »), tapez cette distance, <kbd>Entrée</kbd>.</li>
+      <li>Redessinez ensuite les murs par-dessus. Opacité, rotation, déplacement et verrouillage sont dans le panneau de droite.</li>
+    </ul>
+    <h3>Navigation</h3>
+    <ul>
+      <li>Molette : zoom. Glisser sur le vide, bouton droit ou <kbd>Espace</kbd> + glisser : déplacer. <kbd>A</kbd> : ajuster la vue.</li>
+      <li><kbd>Suppr</kbd> : supprimer la sélection. <kbd>⌘Z</kbd> / <kbd>⇧⌘Z</kbd> : annuler / rétablir. <kbd>Échap</kbd> : annuler l'outil en cours.</li>
+      <li>Vue <b>3D</b> : glisser pour tourner, molette pour zoomer, « Visite à pied » pour se promener dans la maison.</li>
+    </ul>
+    <p class="hint">Le projet est sauvegardé automatiquement dans ce navigateur. « Enregistrer » crée un fichier .json que vous pouvez rouvrir ou partager.</p>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

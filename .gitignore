@@ -1,0 +1,7 @@
+# Données personnelles : ne jamais publier
+projets/
+tools/
+.sauvegarde-avant-niveaux/
+test/plan-existant.pdf
+.DS_Store
+node_modules/
