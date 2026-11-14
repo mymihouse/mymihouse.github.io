@@ -178,3 +178,5 @@ html[data-theme="dark"] .sw { box-shadow: 0 0 0 1px #555; }
   #projName { width: 110px; }
   #btnExample { display: none; }
 }
+.as-mic.rec { background: #d93025 !important; color: #fff !important; border-color: #d93025 !important; animation: asPulse 1.2s infinite; }
+@keyframes asPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(217,48,37,.5); } 50% { box-shadow: 0 0 0 6px rgba(217,48,37,0); } }

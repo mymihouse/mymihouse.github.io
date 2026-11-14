@@ -392,7 +392,8 @@ export function initAssistant(h) {
     <div class="as-log" id="asLog"></div>
     <form class="as-form" id="asForm" autocomplete="off">
       <span class="as-ic">✨</span>
-      <input id="asInput" placeholder="Ex. « agrandis la chambre 1 de 30 cm vers la salle de bains » ou « fenêtres en gris anthracite »">
+      <input id="asInput" placeholder="Écrivez ou cliquez sur 🎤 pour parler. Ex. « agrandis la chambre 1 de 30 cm vers la salle de bains »">
+      <button class="btn small as-mic" type="button" id="asMic" title="Parler (cliquez, puis dites votre demande)">🎤</button>
       <button class="btn primary small" id="asSend" type="submit">Envoyer</button>
       <button class="btn small" type="button" id="asGear" title="Réglages de l'assistant (clé Gemini)">⚙</button>
       <button class="btn small" type="button" id="asClose" title="Fermer">×</button>
@@ -467,5 +468,36 @@ export function initAssistant(h) {
     busy = false; $('#asSend').disabled = false; input.focus();
   });
   input.addEventListener('keydown', (e) => { if (e.key === 'Escape') { input.blur(); } });
+
+  // Dictée vocale (Chrome, Edge, Safari) : on parle, la phrase s'écrit puis part toute seule
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const mic = $('#asMic');
+  if (!SR) { mic.style.display = 'none'; }
+  else {
+    let rec = null;
+    const PH = input.placeholder;
+    const stop = () => { mic.classList.remove('rec'); mic.textContent = '🎤'; input.placeholder = PH; rec = null; };
+    mic.onclick = () => {
+      if (rec) { rec.stop(); return; }
+      if (busy) return;
+      if (!getKey()) { openSettings(); return; }
+      rec = new SR();
+      rec.lang = 'fr-FR'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+      let finalText = '';
+      const before = input.value;
+      rec.onresult = (ev) => {
+        let interim = '';
+        for (let i = ev.resultIndex; i < ev.results.length; i++) { const t = ev.results[i][0].transcript; if (ev.results[i].isFinal) finalText += t; else interim += t; }
+        input.value = (finalText + interim).trim();
+      };
+      rec.onerror = (ev) => {
+        const msg = ev.error === 'not-allowed' || ev.error === 'service-not-allowed' ? 'Micro refusé : autorisez le micro pour ce site (icône à gauche de l’adresse), puis réessayez.' : ev.error === 'no-speech' ? 'Je n’ai rien entendu. Cliquez sur 🎤 et parlez juste après.' : ev.error === 'network' ? 'La dictée a besoin d’Internet.' : 'Dictée impossible (' + ev.error + ').';
+        addMsg('ai err', esc(msg)); input.value = before;
+      };
+      rec.onend = () => { stop(); if (finalText.trim()) { input.value = finalText.trim(); $('#asForm').requestSubmit(); } };
+      try { rec.start(); mic.classList.add('rec'); mic.textContent = '⏺ J’écoute…'; input.value = ''; input.placeholder = 'Parlez… (cliquez à nouveau pour arrêter)'; }
+      catch (e) { stop(); }
+    };
+  }
   return { open };
 }
