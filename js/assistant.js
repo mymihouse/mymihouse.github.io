@@ -317,13 +317,13 @@ async function gfetch(path, key, body) {
   return j;
 }
 
-// Modèles disponibles pour cette clé, du plus adapté (rapide, quota gratuit large) au moins adapté
+// Modèles disponibles pour cette clé : Flash (meilleur) d'abord, Flash-Lite (quota gratuit plus large) en secours
 let modelCache = { key: null, list: null };
 export async function listModels(key = getKey()) {
   if (modelCache.key === key && modelCache.list) return modelCache.list;
   const j = await gfetch('/models?pageSize=200', key);
   const ver = (n) => { const m = n.match(/gemini-(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : 0; };
-  const rank = (n) => (/flash-lite/.test(n) ? 0 : /flash/.test(n) ? 1 : 2) + (/preview|exp/.test(n) ? 0.5 : 0);
+  const rank = (n) => (/flash-lite/.test(n) ? 1 : /flash/.test(n) ? 0 : 2) + (/preview|exp/.test(n) ? 0.5 : 0);
   const res = (j.models || [])
     .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
     .map((m) => m.name.replace(/^models\//, ''))
@@ -405,7 +405,7 @@ export function initAssistant(h) {
     <div class="as-keyrow"><input type="password" id="asKey" placeholder="Collez votre clé ici (commence souvent par AIza…)"><button class="btn primary" id="asKeySave">Enregistrer</button><button class="btn" id="asKeyDel">Oublier</button></div>
     <div class="as-keyrow"><label>Modèle :</label><select id="asModel"><option value="">Automatique (recommandé)</option></select><button class="btn" id="asTest">Tester la clé</button></div>
     <p class="as-status" id="asStatus"></p>
-    <p class="as-note">La clé reste dans <b>ce navigateur</b>, sur cet ordinateur ; elle n'est envoyée qu'à Google. À chaque demande, l'assistant envoie à Google la description du plan (pièces, murs, dimensions), sans le nom du projet ni l'adresse. Sur l'offre gratuite, Google limite le nombre de demandes par jour et peut utiliser ces données pour améliorer ses modèles.</p>
+    <p class="as-note">La clé reste dans <b>ce navigateur</b>, sur cet ordinateur ; elle n'est envoyée qu'à Google. À chaque demande, l'assistant envoie à Google la description du plan (pièces, murs, dimensions), sans le nom du projet ni l'adresse. Sur l'offre gratuite, Google limite le nombre de demandes par jour (quand la limite du meilleur modèle est atteinte, l'assistant passe tout seul à un modèle plus léger) et peut utiliser ces données pour améliorer ses modèles.</p>
   </div>`;
   document.body.appendChild(modal);
 
