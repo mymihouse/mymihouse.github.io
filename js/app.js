@@ -1,5 +1,5 @@
 // MymiHouseBoucletteBuilder — interface principale
-import { store, on, emit, uid, checkpoint, undo, redo, newProject, loadDoc, loadAutosave, syncRooms, syncAllRooms, topo, wallGeoms, resolvedRooms, stats, fmtLen, ROOM_NAMES, FLOORS, outsideSide, activeLevel, levelInfo, levelData, newLevel, levelName, bindDoc, ghostLevel, roofLevelIndex } from './model.js';
+import { store, on, emit, uid, checkpoint, dropCheckpoint, undo, redo, newProject, loadDoc, loadAutosave, syncRooms, syncAllRooms, topo, wallGeoms, resolvedRooms, stats, fmtLen, ROOM_NAMES, FLOORS, outsideSide, activeLevel, levelInfo, levelData, newLevel, levelName, bindDoc, ghostLevel, roofLevelIndex } from './model.js';
 import * as G from './geom.js';
 import { OPENING_TYPES, clampOpening, wallsAtNode, pointOnWall, wallPoly, openingRange } from './walls.js';
 import { FURNITURE, FURNITURE_CATS } from './furniture.js';
@@ -11,6 +11,7 @@ import { drawMasse, masseExtents } from './masse.js';
 import { init3D, setActive, markDirty, startWalk, toggleRoof, toggleCutaway, snapshot, offscreenSnapshot, resetFrame } from './view3d.js';
 import { exportPDF, exportPNG, renderPage } from './export.js';
 import { buildExample } from './example.js';
+import { initAssistant } from './assistant.js';
 import { importBackground, setBackgroundLoadedCallback, backgroundCorners, drawBackground } from './background.js';
 
 const $ = (s) => document.querySelector(s);
@@ -1177,6 +1178,7 @@ else if (saved && (saved.walls?.length || saved.furniture?.length || saved.level
 else { $('#welcome').classList.add('show'); updatePanel(); }
 if (params.get('level')) setLevel(parseInt(params.get('level'), 10));
 if (params.has('cut')) $('#btnCut').click();
+if (params.has('assist')) setTimeout(() => assistant.open(true), 0);
 if (params.get('view')) setView(params.get('view'));
 if (params.get('bg')) { $('#welcome').classList.remove('show'); fetch(params.get('bg')).then((r) => r.blob()).then((b) => importBg(new File([b], params.get('bg').split('/').pop(), { type: b.type }))); }
 // ?page=plan|masse|coupe|facades : affiche une page du dossier (aperçu ou impression A3 via ?print)
@@ -1196,6 +1198,7 @@ function showPageParam() {
   c.style.cssText = 'width:100%;display:block'; ov.appendChild(c); document.body.appendChild(ov);
 }
 if (!params.get('load')) showPageParam();
+const assistant = initAssistant({ stage, toggleBtn: $('#btnAssist'), undo: () => { if (undo()) afterUndo(); }, setLevel, dropCheckpoint });
 updateLevelBar();
 window.addEventListener('error', (e) => toast('Erreur : ' + e.message, 6000));
 $('#projName').value = store.doc.project.name;

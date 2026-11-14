@@ -112,3 +112,26 @@ footer #hint { flex: 1; color: var(--text); }
 .swatches .sw.on { outline: 2px solid var(--accent); outline-offset: 1px; }
 .swatches input[type=color] { width: 26px; height: 22px; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: none; cursor: pointer; }
 .row:has(.swatches) { grid-template-columns: 1fr; gap: 4px; }
+
+/* Assistant (phrases → modifications) */
+#btnAssist.on { background: var(--accent-soft); border-color: #c6dafc; color: #174ea6; }
+#assist { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(720px, calc(100% - 32px)); display: none; flex-direction: column; gap: 6px; z-index: 6; }
+#assist.show { display: flex; }
+.as-log { display: flex; flex-direction: column; gap: 6px; max-height: 40vh; overflow-y: auto; }
+.as-log:empty { display: none; }
+.as-msg { padding: 8px 12px; border-radius: 10px; font-size: 13px; line-height: 1.4; max-width: 88%; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.as-msg.me { align-self: flex-end; background: var(--accent); color: #fff; }
+.as-msg.ai { align-self: flex-start; background: #fff; border: 1px solid var(--border); }
+.as-msg.pending { color: var(--muted); font-style: italic; }
+.as-msg.err { border-color: #f3c0bb; color: var(--danger); }
+.as-err { margin-top: 4px; color: var(--danger); font-size: 12px; }
+.as-undo { margin-left: 6px; border: 1px solid var(--border); background: #f7f8fa; border-radius: 6px; padding: 1px 8px; font-size: 12px; }
+.as-form { display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 6px 6px 6px 10px; box-shadow: 0 6px 24px rgba(0,0,0,.16); }
+.as-form input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 6px 4px; font-size: 14px; background: transparent; }
+.as-ic { font-size: 16px; }
+.as-keyrow { display: flex; gap: 8px; align-items: center; margin: 10px 0; }
+.as-keyrow input, .as-keyrow select { flex: 1; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; }
+.as-status { min-height: 18px; font-size: 13px; }
+.as-status.ok { color: #188038; }
+.as-status.err { color: var(--danger); }
+.as-note { font-size: 12px; color: var(--muted); }

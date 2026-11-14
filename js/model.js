@@ -106,6 +106,7 @@ export function checkpoint() {
   if (undoStack.length > 150) undoStack.shift();
   redoStack.length = 0;
 }
+export function dropCheckpoint() { undoStack.pop(); }
 export function undo() {
   if (!undoStack.length) return false;
   redoStack.push(JSON.stringify(store.doc));

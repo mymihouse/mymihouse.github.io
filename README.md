@@ -58,3 +58,9 @@ Le projet est sauvegardé automatiquement dans le navigateur. « Enregistrer » 
 - `js/example.js` : maison d'exemple
 - `test/smoke.mjs` : test rapide (`node test/smoke.mjs`)
 - `vendor/` : Three.js 0.160 et jsPDF 2.5.1 (hors ligne)
+
+## Assistant ✨ (modifier le plan en tapant une phrase)
+
+Bouton **✨ Assistant** en haut : « décale la cloison entre la chambre 2 et la douche de 30 cm vers la douche », « volets vert sauge », « bardage bois vertical noir sur la façade est »…
+Il faut une clé **Google Gemini gratuite** (aistudio.google.com/apikey), à coller via ⚙. Elle reste dans le navigateur. Chaque demande s'annule avec ⌘Z.
+Le code est dans `js/assistant.js` ; test hors ligne : `node test/assistant.mjs`.
